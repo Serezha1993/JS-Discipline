@@ -1,4 +1,4 @@
-const taskTextInput = document.querySelectorByID("task-text");
+const taskTextInput = document.getElementById("task-text");
 const taskList = document.querySelector(".task-list");
 const countDayInput = document.querySelector(".count-day__input");
 const createTaskButton = document.querySelector(".create__task-button");
@@ -11,18 +11,16 @@ document.addEventListener("DOMContentLoaded", function(){
     if(storedTasks) {
         tasks = JSON.parse(storedTasks);
         tasks.forEach(task => {
-            createTasks(task);
+            createTask(task);
         });
     }
 });
 
-
-const isCheck = name => document.querySelector(`input[name=" ` + name + ` "]:checked`);
+const isCheck = name => document.querySelector(`input[name="${name}"]:checked`);
 
 function resetInputFields() {
     countDayInput.value = '';
     taskTextInput.value = '';
-
     taskTextInput.focus();
 }
 
@@ -39,14 +37,13 @@ function createTask(task) {
 
     deleteTaskButton.addEventListener("click", function(){
         taskItemHTML.remove();
-
         tasks = tasks.filter(t => t.id !== task.id);
+        localStorage.setItem("tasks", JSON.stringify(tasks));
+    });
 
-        localStorage.setItem("tasks", JSON.stringify(tasks))
-    })
     taskItemHTML.append(deleteTaskButton);
 
-    const taskSubject = `<h1 class="task-item__subject">${task.text}</h1>`
+    const taskSubject = `<h1 class="task-item__subject">${task.text}</h1>`;
     taskItemHTML.insertAdjacentHTML("afterbegin", taskSubject);
 
     const taskItemWrapper = document.createElement("ul");
@@ -54,18 +51,19 @@ function createTask(task) {
 
     taskItemHTML.append(taskItemWrapper);
 
-    let dayCount = task.checkBoxCount || isCheck("days").id;
-
-    countDayInput.value !== "" ? (dayCount = countDayInput.value) : "";
+    let dayCount = task.checkBoxCount || isCheck("days")?.id;
+    if (countDayInput.value !== "") {
+        dayCount = countDayInput.value;
+    }
 
     function createCeilDays(quantity) {
         for(let i = 1; i <= quantity; i++) {
             const taskItemCeil = `
             <li class="task-item__ceil">
             <p class="count-day">${i}</p>
-            <input class="checkbox" type="checkbox" name="select-day" ${task.checkboxStates && task.checkboxStates[i -1] ? "cheked" : ""}>
+            <input class="checkbox" type="checkbox" name="select-day" ${task.checkboxStates && task.checkboxStates[i - 1] ? "checked" : ""}>
             </li>
-            `
+            `;
 
             taskItemWrapper.insertAdjacentHTML("beforeend", taskItemCeil);
         }
@@ -75,39 +73,33 @@ function createTask(task) {
 
 createTaskButton.addEventListener("click", function(event) {
     if(taskTextInput.value !== "") {
-        event.preventDefault()
+        event.preventDefault();
 
         const newTask = {
             id: Date.now(),
             text: taskTextInput.value,
             checkboxStates: [],
-            checkBoxCount: countDayInput.value || isCheck("days" .id)
-        }
+            checkBoxCount: countDayInput.value || isCheck("days")?.id
+        };
 
-        tasks.push(newTask)
-
-        createTask(newTask)
-        resetInputFields()
+        tasks.push(newTask);
+        createTask(newTask);
+        resetInputFields();
 
         localStorage.setItem("tasks", JSON.stringify(tasks));
-
     }
-})
+});
 
 document.addEventListener("change", function(event) {
     const checkbox = event.target;
-    if(checkbox.type === "checkbox" && checkbox.name === "selected_day") {
-        const taskId = checkbox.closset(".task-item").getAttribute("data-task-id")
-
-        const task = tasks.find(t => t.id ===taskId)
-        const dayIndex = Array.from(checkbox.closset(".task-item__wrapper").querySelectorAll(".checkbox")).indexOf(checkbox)
+    if(checkbox.type === "checkbox" && checkbox.name === "select-day") {
+        const taskId = Number(checkbox.closest(".task-item").getAttribute("data-task-id"));
+        const task = tasks.find(t => t.id === taskId);
+        const dayIndex = Array.from(checkbox.closest(".task-item__wrapper").querySelectorAll(".checkbox")).indexOf(checkbox);
 
         if(task && dayIndex !== -1) {
             task.checkboxStates[dayIndex] = checkbox.checked;
-
-            localStorage.setItem("task", JSON.stringify(tasks))
+            localStorage.setItem("tasks", JSON.stringify(tasks));
         }
     }
-})
-
-
+});
